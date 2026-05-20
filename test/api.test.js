@@ -120,6 +120,14 @@ test("serves operating room and quality dashboards", async (t) => {
     assert.match(response.headers.get("content-type"), /text\/html/);
     if (path === "/or-door-display") {
       assert.match(html, /door-display-shell/);
+      assert.match(html, /door-device-terminal/);
+      assert.match(html, /data-device-size="13\.3寸竖屏"/);
+      assert.match(html, /data-resolution="1080x1920"/);
+      assert.match(html, /door-device-lightbar/);
+      assert.match(html, /door-device-screen-wrap/);
+      assert.match(html, /door-speaker/);
+      assert.match(html, /护理 nursing/);
+      assert.match(html, /呼叫 call/);
       assert.match(html, /door-calm-ribbon/);
       assert.match(html, /请保持安静/);
       assert.match(html, /当前手术/);

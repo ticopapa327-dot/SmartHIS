@@ -553,6 +553,464 @@ function shell(title, body, script, options = {}) {
       .door-staff-grid { font-size: 14px; line-height: 1.45; }
     }
 
+    body.door-display-shell {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      padding: 12px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(210, 222, 255, 0.24), transparent 38%),
+        linear-gradient(135deg, #63709a 0%, #7381ad 46%, #566286 100%);
+    }
+    body.door-display-shell main {
+      width: min(94vw, calc(98vh * 0.552));
+      min-width: 360px;
+      max-width: 980px;
+      min-height: 0;
+      margin: 0 auto;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .door-device-terminal {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 552 / 1000;
+      display: grid;
+      grid-template-rows: 8.7% minmax(0, 1fr) 12.6%;
+      gap: 12px;
+      padding: 16px 18px 18px;
+      color: #17211e;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.04) 28%, transparent 50%),
+        linear-gradient(180deg, #9ba0aa 0%, #70747f 100%);
+      border: 1px solid rgba(30, 34, 42, 0.55);
+      border-radius: 20px;
+      box-shadow:
+        0 26px 68px rgba(22, 30, 48, 0.34),
+        inset 0 2px 3px rgba(255, 255, 255, 0.48),
+        inset 0 -7px 16px rgba(28, 31, 40, 0.25);
+    }
+    .door-device-lightbar {
+      align-self: center;
+      justify-self: center;
+      width: 72%;
+      height: 48%;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 26% 44%, rgba(220, 250, 255, 0.98), transparent 20%),
+        radial-gradient(circle at 72% 46%, rgba(170, 226, 255, 0.86), transparent 36%),
+        linear-gradient(180deg, #bff1ff 0%, #75d8ff 54%, #95ecff 100%);
+      border: 1px solid rgba(220, 248, 255, 0.88);
+      box-shadow:
+        0 0 14px rgba(134, 221, 255, 0.72),
+        inset 0 2px 7px rgba(255, 255, 255, 0.82),
+        inset 0 -4px 10px rgba(40, 144, 192, 0.26);
+    }
+    .door-device-screen-wrap {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 18px minmax(0, 1fr);
+      overflow: hidden;
+      padding: 4px;
+      background: #111918;
+      border: 1px solid rgba(17, 20, 25, 0.78);
+      border-radius: 2px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 2px 9px rgba(22, 28, 38, 0.45);
+    }
+    .door-device-statusbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      color: rgba(236, 250, 242, 0.9);
+      background: #0f3c26;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 800;
+    }
+    .door-screen {
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      padding: 10px;
+      gap: 8px;
+      background:
+        linear-gradient(90deg, rgba(11, 128, 82, 0.28) 0 9px, transparent 9px),
+        radial-gradient(circle at 100% 0%, rgba(250, 255, 245, 0.74), transparent 32%),
+        linear-gradient(180deg, #edf5e8 0%, #d9eddf 100%);
+      border-left: 5px solid #0c7549;
+    }
+    .door-hero {
+      min-height: 124px;
+      padding: 14px 14px 12px 150px;
+      border-radius: 6px;
+    }
+    .door-room-badge {
+      top: -7px;
+      left: 16px;
+      width: 126px;
+      height: 118px;
+      border-radius: 7px 7px 42px 42px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 44%),
+        linear-gradient(180deg, #418e5e 0%, #126f43 100%);
+    }
+    .door-room-badge .room-code {
+      font-size: 39px;
+      letter-spacing: 0;
+      font-weight: 500;
+    }
+    .door-room-badge .room-table {
+      font-size: 23px;
+    }
+    .door-date {
+      font-size: 15px;
+    }
+    .door-main-status {
+      margin-top: 8px;
+      font-size: 42px;
+    }
+    .door-duration {
+      gap: 8px;
+      margin-top: 9px;
+      font-size: 14px;
+    }
+    .door-duration span {
+      min-width: 36px;
+      padding: 7px 6px;
+      border-radius: 7px;
+    }
+    .door-card {
+      border-radius: 8px;
+    }
+    .door-card-header {
+      min-height: 34px;
+      padding: 0 10px 0 16px;
+      font-size: 17px;
+    }
+    .door-pill {
+      min-width: 70px;
+      padding: 5px 11px;
+      font-size: 14px;
+    }
+    .door-card-body {
+      padding: 11px 13px 10px;
+    }
+    .door-patient {
+      grid-template-columns: 48px 1fr auto;
+      gap: 10px;
+    }
+    .door-avatar {
+      width: 46px;
+      height: 46px;
+    }
+    .door-name-line {
+      gap: 7px;
+      font-size: 16px;
+    }
+    .door-name {
+      font-size: 21px;
+    }
+    .door-meta {
+      margin-top: 3px;
+      font-size: 15px;
+    }
+    .door-divider {
+      margin: 9px 0 8px;
+    }
+    .door-field {
+      margin-top: 4px;
+      grid-template-columns: 96px 1fr;
+      font-size: 16px;
+      line-height: 1.34;
+    }
+    .door-staff-grid {
+      margin-top: 8px;
+      padding: 8px 12px;
+      font-size: 15px;
+      line-height: 1.52;
+    }
+    .door-bottom {
+      grid-template-columns: 0.55fr 1fr 0.56fr;
+      gap: 8px;
+    }
+    .door-env-list {
+      gap: 8px;
+    }
+    .door-env-item {
+      grid-template-columns: 31px 1fr;
+      gap: 8px;
+      min-height: 52px;
+      padding: 7px 9px;
+    }
+    .door-env-icon {
+      width: 29px;
+      height: 29px;
+      font-size: 15px;
+    }
+    .door-env-label {
+      font-size: 12px;
+    }
+    .door-env-value {
+      font-size: 15px;
+    }
+    .door-room-photo,
+    .door-call {
+      min-height: 154px;
+    }
+    .door-call {
+      font-size: 16px;
+      border-radius: 9px;
+    }
+    .door-call-icon {
+      width: 44px;
+      height: 44px;
+    }
+    .door-notice {
+      margin-top: 2px;
+      font-size: 11px;
+    }
+    .door-device-bottom {
+      display: grid;
+      grid-template-columns: 1fr 0.58fr 1fr;
+      gap: 14px;
+      align-items: end;
+      color: rgba(235, 238, 241, 0.54);
+      font-size: 10px;
+      text-align: center;
+    }
+    .door-speaker {
+      align-self: center;
+      width: 62%;
+      max-width: 128px;
+      min-width: 92px;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px 7px;
+      padding-left: 8px;
+    }
+    .door-speaker i {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #15181d;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.22);
+    }
+    .door-mics {
+      align-self: center;
+      display: grid;
+      justify-items: center;
+      gap: 5px;
+    }
+    .door-mic-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #16191f;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+    .door-mic-port {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #12151a;
+      box-shadow: inset 0 0 0 2px rgba(220, 224, 229, 0.3);
+    }
+    .door-physical-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 20px;
+      align-items: end;
+    }
+    .door-physical-button {
+      display: grid;
+      justify-items: center;
+      gap: 7px;
+      min-width: 56px;
+    }
+    .door-physical-button span:first-child {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #8b9099, #565b65);
+      border: 2px solid rgba(230, 232, 238, 0.62);
+      box-shadow:
+        inset 0 2px 5px rgba(255, 255, 255, 0.3),
+        inset 0 -5px 8px rgba(20, 24, 31, 0.25),
+        0 2px 5px rgba(20, 24, 31, 0.22);
+    }
+    .door-physical-button span:last-child {
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    @media (max-height: 1100px) {
+      .door-device-terminal {
+        gap: 8px;
+        padding: 12px 14px 14px;
+        border-radius: 16px;
+      }
+      .door-device-screen-wrap {
+        grid-template-rows: 14px minmax(0, 1fr);
+        padding: 3px;
+      }
+      .door-device-statusbar {
+        padding: 0 6px;
+        font-size: 8px;
+      }
+      .door-screen {
+        padding: 7px;
+        gap: 6px;
+      }
+      .door-hero {
+        min-height: 104px;
+        padding: 11px 11px 10px 124px;
+      }
+      .door-room-badge {
+        left: 12px;
+        width: 104px;
+        height: 98px;
+        border-radius: 6px 6px 34px 34px;
+      }
+      .door-room-badge .room-code {
+        font-size: 32px;
+      }
+      .door-room-badge .room-table {
+        font-size: 19px;
+      }
+      .door-date {
+        font-size: 13px;
+      }
+      .door-main-status {
+        margin-top: 6px;
+        font-size: 34px;
+      }
+      .door-duration {
+        gap: 6px;
+        margin-top: 7px;
+        font-size: 12px;
+      }
+      .door-duration span {
+        min-width: 30px;
+        padding: 5px 4px;
+      }
+      .door-calm-ribbon {
+        min-height: 30px;
+        font-size: 15px;
+      }
+      .door-card-header {
+        min-height: 28px;
+        padding: 0 8px 0 12px;
+        font-size: 15px;
+      }
+      .door-pill {
+        min-width: 58px;
+        padding: 4px 9px;
+        font-size: 12px;
+      }
+      .door-card-body {
+        padding: 8px 10px 8px;
+      }
+      .door-patient {
+        grid-template-columns: 38px 1fr auto;
+        gap: 8px;
+      }
+      .door-avatar {
+        width: 36px;
+        height: 36px;
+      }
+      .door-name-line {
+        gap: 5px;
+        font-size: 13px;
+      }
+      .door-name {
+        font-size: 17px;
+      }
+      .door-meta {
+        font-size: 12px;
+      }
+      .door-divider {
+        margin: 6px 0;
+      }
+      .door-field {
+        margin-top: 2px;
+        grid-template-columns: 78px 1fr;
+        font-size: 13px;
+        line-height: 1.24;
+      }
+      .door-staff-grid {
+        margin-top: 6px;
+        padding: 6px 9px;
+        gap: 0 10px;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .door-bottom {
+        gap: 6px;
+      }
+      .door-env-list {
+        gap: 6px;
+      }
+      .door-env-item {
+        grid-template-columns: 26px 1fr;
+        gap: 6px;
+        min-height: 41px;
+        padding: 5px 7px;
+      }
+      .door-env-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+      }
+      .door-env-label {
+        font-size: 10px;
+      }
+      .door-env-value {
+        font-size: 13px;
+      }
+      .door-room-photo,
+      .door-call {
+        min-height: 116px;
+      }
+      .door-call {
+        gap: 7px;
+        font-size: 13px;
+      }
+      .door-call-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 18px;
+      }
+      .door-notice {
+        font-size: 10px;
+      }
+      .door-device-bottom {
+        gap: 10px;
+        font-size: 8px;
+      }
+      .door-speaker {
+        min-width: 72px;
+        gap: 6px 5px;
+      }
+      .door-speaker i {
+        width: 4px;
+        height: 4px;
+      }
+      .door-physical-buttons {
+        gap: 14px;
+      }
+      .door-physical-button {
+        min-width: 44px;
+      }
+      .door-physical-button span:first-child {
+        width: 36px;
+        height: 36px;
+      }
+    }
+
     .control-shell {
       display: grid;
       grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
@@ -1613,7 +2071,21 @@ export function renderOrTerminalSimulatorHtml() {
 export function renderOrDoorDisplayHtml() {
   return shell(
     "手术室门口屏看板",
-    `<div id="board" class="door-screen"></div>`,
+    `<section class="door-device-terminal" data-device-size="13.3寸竖屏" data-resolution="1080x1920">
+      <div class="door-device-lightbar" aria-hidden="true"></div>
+      <div class="door-device-screen-wrap">
+        <div class="door-device-statusbar"><span id="doorDeviceClock">10:41</span><span>●  Wi-Fi  电量</span></div>
+        <div id="board" class="door-screen"></div>
+      </div>
+      <div class="door-device-bottom" aria-hidden="true">
+        <div class="door-speaker">${Array.from({ length: 32 }, () => "<i></i>").join("")}</div>
+        <div class="door-mics"><span class="door-mic-dot"></span><span class="door-mic-dot"></span><span class="door-mic-port"></span></div>
+        <div class="door-physical-buttons">
+          <div class="door-physical-button"><span></span><span>护理 nursing</span></div>
+          <div class="door-physical-button"><span></span><span>呼叫 call</span></div>
+        </div>
+      </div>
+    </section>`,
     `
     function weekdayText(date = new Date()) {
       return ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
@@ -1670,6 +2142,11 @@ export function renderOrDoorDisplayHtml() {
       });
       const doorDate = document.getElementById("doorDate");
       if (doorDate) doorDate.textContent = formatDoorDate();
+      const deviceClock = document.getElementById("doorDeviceClock");
+      if (deviceClock) {
+        const now = new Date();
+        deviceClock.textContent = pad(now.getHours()) + ":" + pad(now.getMinutes());
+      }
     }
     function surgeryCard(item, options = {}) {
       if (!item) {
@@ -1681,9 +2158,9 @@ export function renderOrDoorDisplayHtml() {
         \`;
       }
       const summary = options.summary || null;
-      const diagnosis = options.next ? "下一台候台信息" : "按手术部展示策略隐藏";
       const painTag = item.surgeryLevel === "四级" ? "重点关注" : "无痛";
       const bedNo = summary?.admission?.bed?.bedNo || "";
+      const inpatientNo = maskNo(item.encounter?.inpatientNo || item.encounter?.visitNo || "");
       const sequence = options.sequenceText || "";
       const headerStatus = options.headerStatus || item.status;
       return \`
@@ -1704,12 +2181,11 @@ export function renderOrDoorDisplayHtml() {
                   <span>|</span>
                   <span>\${item.encounter?.department?.deptName || "住院病区"}</span>
                 </div>
-                <div class="door-meta">床位：\${bedNo || "按权限显示"} | 最近状态：\${headerStatus}</div>
+                <div class="door-meta">住院号：\${inpatientNo || "按权限显示"} | 床位：\${bedNo || "按权限显示"}</div>
               </div>
               <span class="door-pill warn">● \${painTag}</span>
             </div>
             <div class="door-divider"></div>
-            <div class="door-field"><span class="label">诊断：</span><span>\${diagnosis}</span></div>
             <div class="door-field"><span class="label">手术名称：</span><span>\${item.plannedSurgeryName || ""}</span></div>
             <div class="door-field"><span class="label">麻醉方式：</span><span>\${item.anesthesiaMethod || ""}</span></div>
             <div class="door-staff-grid">
