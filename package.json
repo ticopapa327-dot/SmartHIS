@@ -1,0 +1,14 @@
+{
+  "name": "smarthis",
+  "version": "0.1.0",
+  "description": "SmartHIS hospital information simulator for Shoushi Smart products.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

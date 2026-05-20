@@ -1,0 +1,11 @@
+node_modules/
+logs/
+data/
+demo/
+.env
+.DS_Store
+Thumbs.db
+*.docx
+*.xlsx
+*.zip
+*.tgz
