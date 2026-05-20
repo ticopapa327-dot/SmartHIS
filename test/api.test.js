@@ -90,6 +90,13 @@ test("serves the family waiting area display", async (t) => {
   assert.match(html, /脱敏/);
   assert.match(html, /id="clock"/);
   assert.match(html, /formatClock/);
+  assert.match(html, /family-tv-simulator/);
+  assert.match(html, /data-resolution="3840x2160"/);
+  assert.match(html, /tv-screen/);
+  assert.match(html, /screen-content/);
+  assert.match(html, /width: 3840px/);
+  assert.match(html, /height: 2160px/);
+  assert.match(html, /fitTelevisionFrame/);
   assert.match(response.headers.get("content-type"), /text\/html/);
 });
 

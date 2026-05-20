@@ -16,7 +16,80 @@ export function renderWaitingDisplayHtml() {
     body {
       margin: 0;
       min-height: 100vh;
+      background: linear-gradient(180deg, #eef6f4 0%, #d9e7e4 100%);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      overflow: hidden;
+    }
+    .family-tv-simulator {
+      width: min(92vw, calc((92vh - 72px) * 16 / 9));
+      min-width: 320px;
+    }
+    .tv-frame {
+      position: relative;
+      padding: clamp(10px, 0.7vw, 22px);
+      background: linear-gradient(145deg, #182225 0%, #0f1719 64%, #263235 100%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: clamp(18px, 2vw, 42px);
+      box-shadow:
+        0 26px 70px rgba(21, 45, 44, 0.26),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        inset 0 -8px 18px rgba(0, 0, 0, 0.3);
+    }
+    .tv-screen {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3840 / 2160;
+      overflow: hidden;
       background: #f6fbf8;
+      border: 1px solid rgba(185, 210, 203, 0.45);
+      border-radius: clamp(8px, 0.7vw, 18px);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+        inset 0 0 28px rgba(34, 77, 70, 0.14);
+    }
+    .screen-content {
+      width: 3840px;
+      height: 2160px;
+      overflow: hidden;
+      background: #f6fbf8;
+      transform-origin: left top;
+      will-change: transform;
+    }
+    .tv-bezel-label {
+      position: absolute;
+      left: 50%;
+      bottom: clamp(2px, 0.18vw, 7px);
+      transform: translateX(-50%);
+      color: rgba(226, 239, 236, 0.74);
+      font-size: clamp(9px, 0.62vw, 18px);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .tv-stand {
+      display: grid;
+      place-items: center;
+      height: clamp(28px, 3.5vh, 54px);
+      pointer-events: none;
+    }
+    .tv-stand::before {
+      content: "";
+      width: min(18vw, 320px);
+      height: clamp(18px, 2.2vh, 34px);
+      background: linear-gradient(180deg, #253033 0%, #141c1e 100%);
+      clip-path: polygon(34% 0, 66% 0, 78% 100%, 22% 100%);
+      box-shadow: 0 12px 26px rgba(19, 45, 43, 0.22);
+    }
+    .tv-stand span {
+      width: min(34vw, 520px);
+      height: clamp(8px, 1.2vh, 16px);
+      margin-top: -1px;
+      background: linear-gradient(180deg, #313d40 0%, #11191b 100%);
+      border-radius: 999px;
+      box-shadow: 0 12px 24px rgba(19, 45, 43, 0.24);
     }
     header {
       position: relative;
@@ -279,6 +352,80 @@ export function renderWaitingDisplayHtml() {
       font-size: 34px;
       font-weight: 800;
     }
+    .screen-content header {
+      min-height: 168px;
+      padding: 42px 72px 30px;
+    }
+    .screen-content header > div:first-child {
+      text-align: center;
+    }
+    .screen-content main {
+      grid-template-columns: minmax(0, 1fr) 620px;
+      gap: 28px;
+      height: calc(2160px - 168px);
+      padding: 30px 72px 48px;
+    }
+    .screen-content h1 { font-size: 72px; }
+    .screen-content .hospital-line { font-size: 34px; }
+    .screen-content .clock {
+      position: absolute;
+      right: 72px;
+      min-width: 470px;
+      padding: 18px 26px;
+      font-size: 42px;
+    }
+    .screen-content .summary {
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .screen-content .metric {
+      min-height: 128px;
+      padding: 22px 28px;
+    }
+    .screen-content .metric .label { font-size: 28px; }
+    .screen-content .metric .value { font-size: 50px; }
+    .screen-content .notice {
+      min-height: 76px;
+      margin-bottom: 20px;
+      padding: 16px 26px;
+      font-size: 30px;
+    }
+    .screen-content .case-grid { gap: 20px; }
+    .screen-content .case-card {
+      min-height: 226px;
+      grid-template-columns: 168px minmax(0, 1fr);
+      gap: 24px;
+      padding: 24px;
+    }
+    .screen-content .queue { font-size: 76px; }
+    .screen-content .patient-name { font-size: 46px; }
+    .screen-content .room-name { font-size: 34px; }
+    .screen-content .status {
+      min-width: 220px;
+      padding: 14px 22px;
+      font-size: 36px;
+    }
+    .screen-content .phase {
+      gap: 10px;
+      margin: 16px 0 12px;
+    }
+    .screen-content .phase-step { min-height: 14px; }
+    .screen-content .case-note { font-size: 31px; }
+    .screen-content .updated { font-size: 26px; }
+    .screen-content .care-panel { gap: 20px; }
+    .screen-content .care-card { padding: 30px 34px; }
+    .screen-content .care-card h2 {
+      margin-bottom: 18px;
+      font-size: 40px;
+    }
+    .screen-content .care-card p,
+    .screen-content .service-item {
+      font-size: 30px;
+    }
+    .screen-content .service-item {
+      grid-template-columns: 160px minmax(0, 1fr);
+      gap: 16px;
+    }
     @media (max-width: 1280px) {
       main {
         grid-template-columns: 1fr;
@@ -337,7 +484,11 @@ export function renderWaitingDisplayHtml() {
     }
   </style>
 </head>
-<body>
+<body class="family-tv-page">
+  <div class="family-tv-simulator" data-resolution="3840x2160">
+    <div class="tv-frame" role="img" aria-label="3840x2160 家属等待区电视屏幕仿真">
+      <div class="tv-screen" id="tvScreen">
+        <div class="screen-content" id="screenContent">
   <header>
     <div>
       <h1>手术室家属等待区信息</h1>
@@ -370,12 +521,27 @@ export function renderWaitingDisplayHtml() {
       </section>
     </aside>
   </main>
+        </div>
+      </div>
+      <div class="tv-bezel-label">3840*2160</div>
+    </div>
+    <div class="tv-stand" aria-hidden="true"><span></span></div>
+  </div>
   <script>
     const params = new URLSearchParams(location.search);
+    const screenSpec = { width: 3840, height: 2160 };
     const state = {
       page: 0,
       pages: [[]]
     };
+
+    function fitTelevisionFrame() {
+      const screen = document.getElementById("tvScreen");
+      const content = document.getElementById("screenContent");
+      if (!screen || !content) return;
+      const scale = Math.min(screen.clientWidth / screenSpec.width, screen.clientHeight / screenSpec.height);
+      content.style.transform = \`scale(\${scale})\`;
+    }
 
     function clampInt(value, fallback, min, max) {
       const parsed = Number.parseInt(value ?? "", 10);
@@ -575,7 +741,12 @@ export function renderWaitingDisplayHtml() {
     }
 
     tick();
+    fitTelevisionFrame();
     load();
+    window.addEventListener("resize", fitTelevisionFrame);
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(fitTelevisionFrame).catch(() => {});
+    }
     setInterval(tick, 1000);
     setInterval(load, 15000);
     setInterval(nextPage, pageIntervalMs);
