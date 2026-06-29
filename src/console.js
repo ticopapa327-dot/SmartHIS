@@ -523,6 +523,7 @@ export function renderConsoleHtml() {
       <button id="naturalTickButton" class="secondary" type="button">自然推进一次</button>
       <button id="cohortButton" class="secondary" type="button">模拟100病人</button>
       <a class="link-button" href="/family-waiting-display" target="_blank" rel="noreferrer">家属等待区大屏</a>
+      <a class="link-button" href="/family-waiting-mobile" target="_blank" rel="noreferrer">家属手机端</a>
       <a class="link-button" href="/or-terminal-simulator" target="_blank" rel="noreferrer">终端联调模拟台</a>
       <a class="link-button" href="/or-inner-control?roomId=OR01" target="_blank" rel="noreferrer">室内控制端</a>
       <a class="link-button" href="/or-door-display" target="_blank" rel="noreferrer">手术室门口屏</a>

@@ -10,6 +10,7 @@ import {
   renderOrTerminalSimulatorHtml
 } from "./or-displays.js";
 import { renderWaitingDisplayHtml } from "./waiting-display.js";
+import { renderWaitingMobileHtml } from "./waiting-mobile.js";
 import {
   addSurgeryEvent,
   advanceScenarioRun,
@@ -70,6 +71,13 @@ import {
   queryVendorDatabase,
   syncVendorDatabase
 } from "./vendor-db.js";
+import {
+  buildIntegrationProfiles,
+  buildOrDoorScreenIntegrationSnapshot,
+  buildOrPanelIntegrationSnapshot,
+  buildQueueCallingIntegrationSnapshot,
+  normalizeIntegrationDataScope
+} from "./integrations.js";
 import {
   advancePatientJourney,
   createPatientJourney,
@@ -159,6 +167,14 @@ function requireVendorDatabaseAccess(headers = {}) {
   }
 
   return { 授权模式: "接口密钥已校验" };
+}
+
+function resolveIntegrationDataScope(query = {}, headers = {}) {
+  const dataScope = normalizeIntegrationDataScope(query.dataScope ?? query.scope ?? "display");
+  if (dataScope === "full") {
+    requireVendorDatabaseAccess(headers);
+  }
+  return dataScope;
 }
 
 function crc32(buffer) {
@@ -435,6 +451,38 @@ const routes = [
         }
       };
     }
+  },
+  {
+    method: "GET",
+    pattern: "/api/v1/integrations/profiles",
+    messageType: "REST_INTEGRATION_PROFILE_LIST",
+    handler: () => withStatus(buildIntegrationProfiles())
+  },
+  {
+    method: "GET",
+    pattern: "/api/v1/integrations/or-door-screens/:roomId/snapshot",
+    messageType: "REST_INTEGRATION_OR_DOOR_SCREEN_SNAPSHOT",
+    handler: ({ state, params, query, headers }) => withStatus(buildOrDoorScreenIntegrationSnapshot(state, params.roomId, {
+      dataScope: resolveIntegrationDataScope(query, headers),
+      date: query.date
+    }))
+  },
+  {
+    method: "GET",
+    pattern: "/api/v1/integrations/or-panels/:roomId/snapshot",
+    messageType: "REST_INTEGRATION_OR_PANEL_SNAPSHOT",
+    handler: ({ state, params, query, headers }) => withStatus(buildOrPanelIntegrationSnapshot(state, params.roomId, {
+      dataScope: resolveIntegrationDataScope(query, headers),
+      date: query.date
+    }))
+  },
+  {
+    method: "GET",
+    pattern: "/api/v1/integrations/queue-calls/snapshot",
+    messageType: "REST_INTEGRATION_QUEUE_CALL_SNAPSHOT",
+    handler: ({ state, query, headers }) => withStatus(buildQueueCallingIntegrationSnapshot(state, query, {
+      dataScope: resolveIntegrationDataScope(query, headers)
+    }))
   },
   {
     method: "GET",
@@ -1529,7 +1577,10 @@ function rootResponse() {
       encounterSummary: "/api/v1/encounters/ENC000001/summary",
       fhirPatients: "/fhir/Patient",
       dicomStudies: "/dicomweb/studies",
-      interfaceMessages: "/api/v1/interface-messages"
+      interfaceMessages: "/api/v1/interface-messages",
+      integrationProfiles: "/api/v1/integrations/profiles",
+      thirdPartyDoorScreen: "/api/v1/integrations/or-door-screens/OR01/snapshot",
+      thirdPartyQueueCalls: "/api/v1/integrations/queue-calls/snapshot?date=2026-05-16"
     }
   };
 }
@@ -1733,6 +1784,14 @@ async function dispatch(ctx) {
     return {
       status: 200,
       body: renderWaitingDisplayHtml(),
+      headers: { "content-type": "text/html; charset=utf-8" }
+    };
+  }
+
+  if (method === "GET" && pathname === "/family-waiting-mobile") {
+    return {
+      status: 200,
+      body: renderWaitingMobileHtml(),
       headers: { "content-type": "text/html; charset=utf-8" }
     };
   }

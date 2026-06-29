@@ -71,6 +71,40 @@ const familyStatusLabels = {
   Cancelled: "请咨询护士站"
 };
 
+function maskIdCardNo(idCardNo = "") {
+  const value = String(idCardNo ?? "");
+  if (!value) {
+    return "";
+  }
+  if (value.length < 10) {
+    return `${value.slice(0, 2)}****`;
+  }
+  return `${value.slice(0, 6)}********${value.slice(-4)}`;
+}
+
+function maskPhone(phone = "") {
+  const value = String(phone ?? "");
+  if (!value) {
+    return "";
+  }
+  if (value.length < 7) {
+    return `${value.slice(0, 2)}****`;
+  }
+  return `${value.slice(0, 3)}****${value.slice(-4)}`;
+}
+
+function redactPatientForSummary(patient) {
+  if (!patient) {
+    return patient;
+  }
+  return {
+    ...patient,
+    idCardNo: maskIdCardNo(patient.idCardNo),
+    phone: maskPhone(patient.phone),
+    address: patient.address ? "已脱敏" : ""
+  };
+}
+
 export function findById(items, key, id) {
   return items.find((item) => String(item[key]) === String(id));
 }
@@ -158,7 +192,13 @@ function maskChineseName(name = "") {
   if (!text) {
     return "";
   }
-  return `${text.slice(0, 1)}${"*".repeat(Math.max(text.length - 1, 1))}`;
+  if (text.length === 1) {
+    return "*";
+  }
+  if (text.length === 2) {
+    return `${text.slice(0, 1)}*`;
+  }
+  return `${text.slice(0, 1)}${"*".repeat(text.length - 2)}${text.slice(-1)}`;
 }
 
 function latestSurgeryEvent(state, scheduleId) {
@@ -314,7 +354,7 @@ export function getEncounterSummary(state, encounterId) {
 
   const summary = {
     encounterId,
-    patient,
+    patient: redactPatientForSummary(patient),
     encounter,
     diagnoses,
     documents,

@@ -71,6 +71,7 @@ test("serves the built-in console", async (t) => {
   assert.match(html, /formatClock/);
   assert.match(html, /模拟100病人/);
   assert.match(html, /家属等待区大屏/);
+  assert.match(html, /家属手机端/);
   assert.match(response.headers.get("content-type"), /text\/html/);
 });
 
@@ -97,6 +98,27 @@ test("serves the family waiting area display", async (t) => {
   assert.match(html, /width: 3840px/);
   assert.match(html, /height: 2160px/);
   assert.match(html, /fitTelevisionFrame/);
+  assert.match(response.headers.get("content-type"), /text\/html/);
+});
+
+test("serves the mobile family waiting page", async (t) => {
+  const { baseUrl } = await withServer(t);
+  const response = await fetch(`${baseUrl}/family-waiting-mobile`);
+  const html = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(html, /家属等待区手机端/);
+  assert.match(html, /viewport-fit=cover/);
+  assert.match(html, /患者信息已脱敏/);
+  assert.match(html, /状态筛选/);
+  assert.match(html, /data-filter="全部"/);
+  assert.match(html, /data-filter="等待"/);
+  assert.match(html, /data-filter="术中"/);
+  assert.match(html, /data-filter="术后"/);
+  assert.match(html, /id="clock"/);
+  assert.match(html, /formatClock/);
+  assert.match(html, /family-waiting-snapshot/);
+  assert.doesNotMatch(html, /胆囊结石|腹腔镜胆囊切除术|inpatientNo|idCardNo|phone/);
   assert.match(response.headers.get("content-type"), /text\/html/);
 });
 
@@ -189,11 +211,21 @@ test("exports a de-identified vendor read-only database snapshot", async (t) => 
   assert.equal(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(JSON.stringify(schedules.body)), false);
   assertChinaHospitalDisplayText(schedules.body);
 
+  const queue = await getJson(`${baseUrl}/api/v1/vendor-db/views/vendor_queue_call?pageSize=5&date=2026-05-16`);
+  assert.equal(queue.response.status, 200);
+  assert.ok(queue.body.记录总数 >= 2);
+  assert.equal(Object.hasOwn(queue.body.数据项[0], "叫号文本"), true);
+  assert.equal(Object.hasOwn(queue.body.数据项[0], "数据范围"), true);
+  assert.equal(queue.body.数据项[0].数据范围, "display");
+
   const schema = await fetch(`${baseUrl}/api/v1/vendor-db/schema.sql`);
   const schemaText = await schema.text();
   assert.equal(schema.status, 200);
   assert.match(schema.headers.get("content-type"), /text\/plain/);
   assert.match(schemaText, /CREATE TABLE vendor_surgery_schedule/);
+  assert.match(schemaText, /CREATE TABLE vendor_or_door_screen/);
+  assert.match(schemaText, /CREATE TABLE vendor_or_status_panel/);
+  assert.match(schemaText, /CREATE TABLE vendor_queue_call/);
   assert.match(schemaText, /"手术状态" TEXT/);
 
   const download = await fetch(`${baseUrl}/api/v1/vendor-db/download`);
@@ -201,6 +233,59 @@ test("exports a de-identified vendor read-only database snapshot", async (t) => 
   assert.equal(download.status, 200);
   assert.equal(download.headers.get("content-type"), "application/vnd.sqlite3");
   assert.equal(bytes.subarray(0, 16).toString("ascii"), "SQLite format 3\u0000");
+});
+
+test("serves third-party integration role snapshots with explicit full-data authorization", async (t) => {
+  const previousKeys = process.env.SMARTHIS_VENDOR_API_KEYS;
+  process.env.SMARTHIS_VENDOR_API_KEYS = "integration-secret";
+  t.after(() => {
+    if (previousKeys === undefined) {
+      delete process.env.SMARTHIS_VENDOR_API_KEYS;
+    } else {
+      process.env.SMARTHIS_VENDOR_API_KEYS = previousKeys;
+    }
+  });
+
+  const { baseUrl, server } = await withServer(t);
+  const patient = server.state.patients.find((item) => item.patientId === "PAT000001");
+  patient.name = "测试实名";
+
+  const profiles = await getJson(`${baseUrl}/api/v1/integrations/profiles`);
+  assert.equal(profiles.response.status, 200);
+  assert.ok(profiles.body.profiles.some((item) => item.roleCode === "or-door-screen"));
+  assert.ok(profiles.body.profiles.some((item) => item.sqliteView === "vendor_queue_call"));
+  assert.match(profiles.body.样本依据.observedFiles, /DICOM/);
+  assert.match(profiles.body.样本依据.boundary, /不能证明/);
+
+  const defaultDoor = await getJson(`${baseUrl}/api/v1/integrations/or-door-screens/OR01/snapshot?date=2026-05-16`);
+  assert.equal(defaultDoor.response.status, 200);
+  assert.equal(defaultDoor.body.dataScope, "display");
+  assert.equal(defaultDoor.body.display.patient.name, "测**名");
+  assert.notEqual(defaultDoor.body.display.patient.inpatientNo, "ZY202605160001");
+
+  const unauthenticatedFull = await fetch(`${baseUrl}/api/v1/integrations/or-door-screens/OR01/snapshot?dataScope=full`);
+  assert.equal(unauthenticatedFull.status, 401);
+
+  const fullDoor = await getJson(`${baseUrl}/api/v1/integrations/or-door-screens/OR01/snapshot?dataScope=full`, {
+    headers: { "x-api-key": "integration-secret" }
+  });
+  assert.equal(fullDoor.response.status, 200);
+  assert.equal(fullDoor.body.dataScope, "full");
+  assert.equal(fullDoor.body.display.patient.name, "测试实名");
+  assert.equal(fullDoor.body.display.patient.inpatientNo, "ZY202605160001");
+
+  const queue = await getJson(`${baseUrl}/api/v1/integrations/queue-calls/snapshot?date=2026-05-16&dataScope=full`, {
+    headers: { "x-api-key": "integration-secret" }
+  });
+  assert.equal(queue.response.status, 200);
+  assert.equal(queue.body.dataScope, "full");
+  assert.ok(queue.body.items.some((item) => item.patientName === "测试实名"));
+
+  const panel = await getJson(`${baseUrl}/api/v1/integrations/or-panels/OR01/snapshot?date=2026-05-16`);
+  assert.equal(panel.response.status, 200);
+  assert.equal(panel.body.roleCode, "or-status-panel");
+  assert.equal(panel.body.terminalHealth.total >= 1, true);
+  assert.ok(panel.body.operation.current);
 });
 
 test("runs a Beijing-time natural hospital operation engine", async (t) => {
@@ -405,18 +490,25 @@ test("validates terminal permissions, room binding and idempotent surgery update
 });
 
 test("serves role-specific operating room display snapshots without family privacy leakage", async (t) => {
-  const { baseUrl } = await withServer(t);
+  const { baseUrl, server } = await withServer(t);
 
   const door = await getJson(`${baseUrl}/api/v1/or-display/rooms/OR01/door-snapshot`);
   assert.equal(door.response.status, 200);
   assert.equal(door.body.display.roomName, "1 号手术间");
   assert.equal(door.body.display.displayStatus, "手术开始");
-  assert.equal(door.body.display.patientName, "张**");
+  assert.equal(door.body.display.patientName, "张*某");
   assert.equal(JSON.stringify(door.body).includes("idCardNo"), false);
+
+  const primaryPatient = server.state.patients.find((item) => item.patientId === "PAT000001");
+  primaryPatient.name = "王强";
+  const twoCharDoor = await getJson(`${baseUrl}/api/v1/or-display/rooms/OR01/door-snapshot`);
+  assert.equal(twoCharDoor.body.display.patientName, "王*");
 
   const family = await getJson(`${baseUrl}/api/v1/or-display/family-waiting-snapshot?date=2026-05-16`);
   const familyText = JSON.stringify(family.body);
   assert.equal(family.response.status, 200);
+  assert.equal(family.body.items.find((item) => item.surgeryScheduleId === "SCH000001").patientName, "王*");
+  primaryPatient.name = "张某某";
   assert.equal(family.body.items.some((item) => item.displayStatus === "手术中"), true);
   assert.equal(familyText.includes("inpatientNo"), false);
   assert.equal(familyText.includes("idCardNo"), false);
@@ -592,6 +684,12 @@ test("runs a patient journey through discharge", async (t) => {
   assert.ok(completedSummary.body.quality.checks.some((item) => item.category === "胆囊结石路径" && item.item === "术后病理"));
   assertChinaHospitalDisplayText(completedSummary.body);
   assert.equal(JSON.stringify(completedSummary.body).includes("阑尾"), false);
+  assert.equal(JSON.stringify(completedSummary.body).includes("320300197003120011"), false);
+  assert.equal(JSON.stringify(completedSummary.body).includes("13800000001"), false);
+  assert.equal(JSON.stringify(completedSummary.body).includes("江苏省徐州市演示小区"), false);
+  assert.equal(completedSummary.body.patient.idCardNo, "320300********0011");
+  assert.equal(completedSummary.body.patient.phone, "138****0001");
+  assert.equal(completedSummary.body.patient.address, "已脱敏");
 
   const quality = await getJson(`${baseUrl}/api/v1/encounters/ENC000001/summary/quality`);
   assert.equal(quality.response.status, 200);

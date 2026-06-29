@@ -26,11 +26,13 @@ npm start
 - 终端联调模拟台：`http://127.0.0.1:7070/or-terminal-simulator`
 - 手术室内控制端：`http://127.0.0.1:7070/or-inner-control?roomId=OR01`
 - 家属等待区大屏：`http://127.0.0.1:7070/family-waiting-display`
+- 家属等待区手机端：`http://127.0.0.1:7070/family-waiting-mobile`
 - 手术室门口屏：`http://127.0.0.1:7070/or-door-display?roomId=OR01`
 - 手术部护士站看板：`http://127.0.0.1:7070/or-nurse-station-display`
 - 院长质控看板：`http://127.0.0.1:7070/director-quality-display`
 - 健康检查：`http://127.0.0.1:7070/health`
 - REST API：`http://127.0.0.1:7070/api/v1`
+- 第三方对接画像：`http://127.0.0.1:7070/api/v1/integrations/profiles`
 - FHIR：`http://127.0.0.1:7070/fhir/Patient`
 - DICOMweb：`http://127.0.0.1:7070/dicomweb/studies`
 
@@ -57,6 +59,7 @@ npm test
 - 数据工厂重置与手术生成。
 - 内置控制台页面。
 - 手术室门口屏、手术部护士站看板、院长质控看板页面。
+- 第三方门口屏、手术室信息面板、排队叫号角色接口和厂商只读库视图。
 
 ## 目录
 
@@ -67,6 +70,7 @@ src/
   domain.js     核心业务操作
   fhir.js       FHIR 资源映射
   hl7.js        HL7 v2 样例消息
+  integrations.js 第三方角色化对接契约
   seed.js       演示医院种子数据
   server.js     服务启动入口
 test/
@@ -120,6 +124,18 @@ GET /api/v1/or-display/nurse-station-snapshot?date=2026-05-16
 GET /api/v1/or-display/director-dashboard-snapshot?date=2026-05-16
 GET /api/v1/or-events/replay?roomId=OR02&deviceId=DEV000003&date=2026-05-16
 ```
+
+### 第三方角色化对接
+
+```http
+GET /api/v1/integrations/profiles
+GET /api/v1/integrations/or-door-screens/OR01/snapshot?date=2026-05-16
+GET /api/v1/integrations/or-panels/OR01/snapshot?date=2026-05-16
+GET /api/v1/integrations/queue-calls/snapshot?date=2026-05-16
+GET /api/v1/integrations/queue-calls/snapshot?date=2026-05-16&dataScope=full
+```
+
+`dataScope=display` 是默认范围，按门口屏、运行面板、排队叫号的角色输出最小必要字段；`dataScope=full` 用于授权第三方联调，会输出真实姓名、住院号、床号等角色必要字段。启用 `SMARTHIS_VENDOR_API_KEYS` 后，`full` 范围必须携带 `x-api-key` 或 `Authorization: Bearer <密钥>`。
 
 ### 患者与就诊
 
@@ -184,6 +200,7 @@ GET /api/v1/hl7/messages?messageType=SIU_S12&surgeryScheduleId=SCH000001
 - 影像调阅目前是 DICOMweb 元数据和 Viewer 占位页，后续可接 Orthanc、dcm4chee 或自研 DICOM 服务。
 - FHIR 和 HL7 v2 当前是 MVP 级映射，后续需要按客户项目扩展字段、编码和消息段。
 - 当前版本用于模拟、联调、测试和演示，不用于真实诊疗、真实收费、真实医保或真实病历归档。
+- `D:\我的工作\AOV\客户资料\连云港中医院\11-17` 样本目录当前确认包含 DICOM、X 线检查报告 PDF、截图和压缩包，未发现可直接导入的 `.db/.sql/.mdb/.xlsx/.csv` 业务数据库文件；因此本项目只把该样本用于影像/报告/界面字段建模，不声称复刻了真实医院数据库表结构。
 
 ## 下一阶段建议
 
@@ -217,6 +234,8 @@ POST /api/v1/patient-journeys/simulate-cohort
 ```http
 GET /family-waiting-display
 GET /family-waiting-display?date=2026-05-16&rows=10&roomCount=12&interval=12000
+GET /family-waiting-mobile
+GET /family-waiting-mobile?date=2026-05-16
 GET /or-terminal-simulator
 GET /or-inner-control?roomId=OR01
 GET /or-door-display?roomId=OR01
@@ -225,6 +244,8 @@ GET /director-quality-display
 ```
 
 `/family-waiting-display` 面向 55 寸 4K 家属等待区大屏，页面按电视机外框和 `3840x2160` 屏幕比例仿真，浏览器中会等比缩放为真实 16:9 显示区域。默认每屏显示 10 台手术，超过后按页自动滚动。可通过 `rows` 设置单屏条数，通过 `roomCount` 设置开放手术间数量，通过 `interval` 设置翻页间隔毫秒，通过 `date` 指定手术日期。页面按“术中/接台优先、候台其次、术毕最后”的策略排序，并按常见手术类型、手术级别和预计时长模拟进度、剩余时间和复杂程度。
+
+`/family-waiting-mobile` 面向家属手机扫码查看，复用家属等待区快照接口，只展示等候号、脱敏姓名、手术间、当前阶段、最近更新时间和护士站提示，不展示诊断、术式、住院号、身份证号、电话和住址。页面包含实时时钟、状态筛选、15 秒自动刷新和手动刷新按钮，可通过 `date` 指定手术日期。
 
 `/or-door-display` 面向 13.3 寸竖屏手术间门口屏，按门口屏硬件外框、顶部提示灯、内嵌 `1080x1920` 屏幕区域、底部扬声器和实体按键仿真，默认显示 `OR01`，可通过 `roomId` 切换手术间。`/or-nurse-station-display` 面向手术部护士站，展示今日手术运行、接台、术中、清洁周转、护理交接、安全核查和耗材登记。`/director-quality-display` 面向院长/质控管理，展示病人流程进度、摘要质控、病案质控、院感观察和医保结算概览。
 
@@ -427,7 +448,17 @@ SMARTHIS_NATURAL_TICK_MS=30000      自动推进间隔
 
 ## 厂商只读数据库对接
 
-为方便数字化手术室、门口屏、示教录播、PDA、影像调阅等外部厂商联调，本系统新增厂商只读数据库快照。快照默认生成到 `data/smarthis-vendor-readonly.sqlite`，仅包含脱敏后的对接视图，不暴露系统内部运行对象和原始身份证、电话、住址等敏感信息。数据库表名保留英文代码，便于程序稳定读取；表字段、业务状态和展示内容均使用国内医院中文表述。
+为方便数字化手术室、门口屏、手术室信息显示与运行状态面板、排队叫号、示教录播、PDA、影像调阅等外部厂商联调，本系统提供厂商只读数据库快照。快照默认生成到 `data/smarthis-vendor-readonly.sqlite`，只包含对接视图，不暴露系统内部运行对象。数据库表名保留英文代码，便于程序稳定读取；表字段、业务状态和展示内容均使用国内医院中文表述。
+
+默认 `SMARTHIS_VENDOR_DATA_SCOPE=display`，姓名和住院号按显示端范围处理；需要授权厂商拿真实字段联调时，可在启动前设置：
+
+```powershell
+$env:SMARTHIS_VENDOR_DATA_SCOPE="full"
+$env:SMARTHIS_VENDOR_API_KEYS="vendor-secret"
+npm start
+```
+
+`full` 范围用于真实联调，不等于所有终端都应读取全量病历；门口屏、运行面板、排队叫号仍按角色表输出必要字段。身份证、电话、住址这类字段后续如确需开放，应单独增加接口画像和审批边界，不能混入低权限显示视图。
 
 新增接口：
 
@@ -437,10 +468,13 @@ POST /api/v1/vendor-db/sync
 GET /api/v1/vendor-db/schema.sql
 GET /api/v1/vendor-db/views/vendor_surgery_schedule?pageSize=50
 GET /api/v1/vendor-db/views/vendor_report_index?patientId=PAT000001
+GET /api/v1/vendor-db/views/vendor_or_door_screen?roomId=OR01
+GET /api/v1/vendor-db/views/vendor_or_status_panel?date=2026-05-16
+GET /api/v1/vendor-db/views/vendor_queue_call?date=2026-05-16
 GET /api/v1/vendor-db/download
 ```
 
-当前快照包含 6 个只读视图：
+当前快照包含 9 个只读视图：
 
 ```text
 vendor_patient_index          厂商_患者索引
@@ -449,6 +483,9 @@ vendor_surgery_schedule       厂商_手术排班
 vendor_report_index           厂商_检查检验报告
 vendor_medication_nursing     厂商_用药护理执行
 vendor_billing_settlement     厂商_收费医保结算
+vendor_or_door_screen         厂商_手术室门口屏
+vendor_or_status_panel        厂商_手术室运行面板
+vendor_queue_call             厂商_排队叫号
 ```
 
 授权控制：默认内网演示环境不启用密钥；需要给客户或厂商试用时，可在启动服务前设置 `SMARTHIS_VENDOR_API_KEYS`，多个密钥用英文逗号或分号分隔。启用后厂商必须通过 `x-api-key` 请求头或 `Authorization: Bearer <密钥>` 访问上述数据库接口。

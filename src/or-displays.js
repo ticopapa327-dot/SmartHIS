@@ -1666,7 +1666,11 @@ function shell(title, body, script, options = {}) {
       return Number.isNaN(date.getTime()) ? value : date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
     }
     function maskName(name = "") {
-      return name ? name.slice(0, 1) + "**" : "";
+      const text = String(name || "");
+      if (!text) return "";
+      if (text.length === 1) return "*";
+      if (text.length === 2) return text.slice(0, 1) + "*";
+      return text.slice(0, 1) + "*".repeat(text.length - 2) + text.slice(-1);
     }
     function maskNo(value = "") {
       return value ? value.slice(0, 4) + "****" + value.slice(-2) : "";

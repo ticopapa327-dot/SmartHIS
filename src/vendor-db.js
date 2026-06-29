@@ -2,6 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { businessLabel, formatBeijingDateTime } from "./china-standard.js";
 import { findById } from "./domain.js";
+import {
+  buildVendorDoorScreenRows,
+  buildVendorOrPanelRows,
+  buildVendorQueueCallRows,
+  normalizeIntegrationDataScope
+} from "./integrations.js";
 
 const VIEW_DEFINITIONS = [
   {
@@ -33,15 +39,48 @@ const VIEW_DEFINITIONS = [
     name: "vendor_billing_settlement",
     title: "厂商_收费医保结算",
     description: "住院预交、费用项目、医保结算和电子票据信息。"
+  },
+  {
+    name: "vendor_or_door_screen",
+    title: "厂商_手术室门口屏",
+    description: "按手术间门口屏消费方式整理的当前手术、患者、人员、状态和终端信息。"
+  },
+  {
+    name: "vendor_or_status_panel",
+    title: "厂商_手术室运行面板",
+    description: "按手术室信息显示与运行状态面板消费方式整理的当前/下一台、事件和终端健康信息。"
+  },
+  {
+    name: "vendor_queue_call",
+    title: "厂商_排队叫号",
+    description: "面向排队叫号系统的队列号、叫号状态、患者、手术间和计划时间。"
   }
 ];
 
 function maskName(name = "") {
-  return name ? `${name.slice(0, 1)}**` : "";
+  const text = String(name || "");
+  if (!text) {
+    return "";
+  }
+  if (text.length === 1) {
+    return "*";
+  }
+  if (text.length === 2) {
+    return `${text.slice(0, 1)}*`;
+  }
+  return `${text.slice(0, 1)}${"*".repeat(text.length - 2)}${text.slice(-1)}`;
 }
 
 function maskNo(value = "") {
   return value ? `${value.slice(0, 4)}****${value.slice(-2)}` : "";
+}
+
+function scopedName(name, dataScope) {
+  return normalizeIntegrationDataScope(dataScope) === "full" ? String(name || "") : maskName(name);
+}
+
+function scopedNo(value, dataScope) {
+  return normalizeIntegrationDataScope(dataScope) === "full" ? String(value || "") : maskNo(value);
 }
 
 function displayTime(value) {
@@ -65,6 +104,10 @@ function getVendorDbPath() {
     ?? path.join(process.cwd(), "data", "smarthis-vendor-readonly.sqlite");
 }
 
+function getVendorDataScope() {
+  return normalizeIntegrationDataScope(process.env.SMARTHIS_VENDOR_DATA_SCOPE ?? "display");
+}
+
 async function openDatabase(filePath) {
   const sqlite = await import("node:sqlite");
   return new sqlite.DatabaseSync(filePath);
@@ -78,6 +121,9 @@ function createSchema(db) {
     DROP TABLE IF EXISTS vendor_report_index;
     DROP TABLE IF EXISTS vendor_medication_nursing;
     DROP TABLE IF EXISTS vendor_billing_settlement;
+    DROP TABLE IF EXISTS vendor_or_door_screen;
+    DROP TABLE IF EXISTS vendor_or_status_panel;
+    DROP TABLE IF EXISTS vendor_queue_call;
 
     CREATE TABLE vendor_patient_index (
       "患者ID" TEXT PRIMARY KEY,
@@ -171,6 +217,77 @@ function createSchema(db) {
       "状态" TEXT,
       "票据或结算单号" TEXT
     );
+
+    CREATE TABLE vendor_or_door_screen (
+      "记录ID" TEXT PRIMARY KEY,
+      "数据范围" TEXT,
+      "手术排班ID" TEXT,
+      "手术日期" TEXT,
+      "手术间ID" TEXT,
+      "手术间" TEXT,
+      "台次" INTEGER,
+      "当前类型" TEXT,
+      "显示状态" TEXT,
+      "患者ID" TEXT,
+      "姓名" TEXT,
+      "住院号" TEXT,
+      "科室" TEXT,
+      "床号" TEXT,
+      "手术名称" TEXT,
+      "麻醉方式" TEXT,
+      "主刀医师" TEXT,
+      "麻醉医师" TEXT,
+      "计划开始时间" TEXT,
+      "最近更新时间" TEXT,
+      "终端状态" TEXT,
+      "叫号文本" TEXT
+    );
+
+    CREATE TABLE vendor_or_status_panel (
+      "记录ID" TEXT PRIMARY KEY,
+      "数据范围" TEXT,
+      "手术日期" TEXT,
+      "手术间ID" TEXT,
+      "手术间" TEXT,
+      "房间状态" TEXT,
+      "当前手术ID" TEXT,
+      "当前患者姓名" TEXT,
+      "当前手术名称" TEXT,
+      "当前状态" TEXT,
+      "下一台手术ID" TEXT,
+      "下一台患者姓名" TEXT,
+      "下一台手术名称" TEXT,
+      "主刀医师" TEXT,
+      "麻醉医师" TEXT,
+      "巡回护士" TEXT,
+      "器械护士" TEXT,
+      "事件数" INTEGER,
+      "最近事件" TEXT,
+      "最近更新时间" TEXT,
+      "终端在线数" INTEGER,
+      "终端离线数" INTEGER
+    );
+
+    CREATE TABLE vendor_queue_call (
+      "叫号ID" TEXT PRIMARY KEY,
+      "数据范围" TEXT,
+      "手术日期" TEXT,
+      "队列号" TEXT,
+      "手术排班ID" TEXT,
+      "手术间ID" TEXT,
+      "手术间" TEXT,
+      "台次" INTEGER,
+      "患者ID" TEXT,
+      "姓名" TEXT,
+      "住院号" TEXT,
+      "科室" TEXT,
+      "手术名称" TEXT,
+      "显示状态" TEXT,
+      "叫号状态" TEXT,
+      "计划开始时间" TEXT,
+      "最近更新时间" TEXT,
+      "叫号文本" TEXT
+    );
   `);
 }
 
@@ -194,11 +311,12 @@ function practitionerName(state, practitionerId) {
   return findById(state.practitioners, "practitionerId", practitionerId)?.name ?? "";
 }
 
-function buildPatientRows(state) {
+function buildPatientRows(state, options = {}) {
+  const dataScope = normalizeIntegrationDataScope(options.dataScope ?? getVendorDataScope());
   return state.patients.map((patient) => ({
     患者ID: patient.patientId,
     院内主索引号: patient.mpiNo,
-    姓名: maskName(patient.name),
+    姓名: scopedName(patient.name, dataScope),
     性别: patient.gender,
     年龄: patient.ageText,
     医保类型: patient.insuranceType,
@@ -232,7 +350,8 @@ function buildEncounterRows(state) {
   });
 }
 
-function buildSurgeryRows(state) {
+function buildSurgeryRows(state, options = {}) {
+  const dataScope = normalizeIntegrationDataScope(options.dataScope ?? getVendorDataScope());
   return state.surgerySchedules.map((schedule) => {
     const request = findById(state.surgeryRequests, "surgeryRequestId", schedule.surgeryRequestId);
     const encounter = request ? findById(state.encounters, "encounterId", request.encounterId) : null;
@@ -247,8 +366,8 @@ function buildSurgeryRows(state) {
       手术间: room?.roomName ?? schedule.roomId,
       台次: schedule.tableNo,
       患者ID: patient?.patientId ?? "",
-      姓名: maskName(patient?.name),
-      住院号: maskNo(encounter?.inpatientNo),
+      姓名: scopedName(patient?.name, dataScope),
+      住院号: scopedNo(encounter?.inpatientNo, dataScope),
       科室: departmentName(state, encounter?.deptId),
       手术名称: request?.plannedSurgeryName ?? "",
       手术编码: request?.plannedSurgeryCode ?? "",
@@ -462,12 +581,16 @@ function buildBillingRows(state) {
 }
 
 function populateDatabase(db, state) {
-  insertRows(db, "vendor_patient_index", ["患者ID", "院内主索引号", "姓名", "性别", "年龄", "医保类型", "血型", "过敏史"], buildPatientRows(state));
+  const dataScope = getVendorDataScope();
+  insertRows(db, "vendor_patient_index", ["患者ID", "院内主索引号", "姓名", "性别", "年龄", "医保类型", "血型", "过敏史"], buildPatientRows(state, { dataScope }));
   insertRows(db, "vendor_encounter_index", ["住院就诊ID", "患者ID", "住院号", "就诊流水号", "科室", "病区", "床号", "主诊断编码", "主诊断名称", "主治医师", "入院时间", "出院时间", "就诊状态"], buildEncounterRows(state));
-  insertRows(db, "vendor_surgery_schedule", ["手术排班ID", "手术通知单号", "手术日期", "手术间", "台次", "患者ID", "姓名", "住院号", "科室", "手术名称", "手术编码", "手术级别", "麻醉方式", "主刀医师", "麻醉医师", "巡回护士", "器械护士", "计划开始时间", "计划结束时间", "实际开始时间", "实际结束时间", "手术状态"], buildSurgeryRows(state));
+  insertRows(db, "vendor_surgery_schedule", ["手术排班ID", "手术通知单号", "手术日期", "手术间", "台次", "患者ID", "姓名", "住院号", "科室", "手术名称", "手术编码", "手术级别", "麻醉方式", "主刀医师", "麻醉医师", "巡回护士", "器械护士", "计划开始时间", "计划结束时间", "实际开始时间", "实际结束时间", "手术状态"], buildSurgeryRows(state, { dataScope }));
   insertRows(db, "vendor_report_index", ["报告ID", "住院就诊ID", "患者ID", "报告类型", "报告名称", "检查号", "检查项目", "报告时间", "报告状态", "异常标记", "结论", "影像调阅地址"], buildReportRows(state));
   insertRows(db, "vendor_medication_nursing", ["记录ID", "住院就诊ID", "患者ID", "记录类型", "项目名称", "执行状态", "执行时间", "执行科室或阶段", "备注"], buildMedicationNursingRows(state));
   insertRows(db, "vendor_billing_settlement", ["记录ID", "住院就诊ID", "患者ID", "记录类型", "项目名称", "金额", "医保类别", "自付金额", "发生时间", "状态", "票据或结算单号"], buildBillingRows(state));
+  insertRows(db, "vendor_or_door_screen", ["记录ID", "数据范围", "手术排班ID", "手术日期", "手术间ID", "手术间", "台次", "当前类型", "显示状态", "患者ID", "姓名", "住院号", "科室", "床号", "手术名称", "麻醉方式", "主刀医师", "麻醉医师", "计划开始时间", "最近更新时间", "终端状态", "叫号文本"], buildVendorDoorScreenRows(state, { dataScope }));
+  insertRows(db, "vendor_or_status_panel", ["记录ID", "数据范围", "手术日期", "手术间ID", "手术间", "房间状态", "当前手术ID", "当前患者姓名", "当前手术名称", "当前状态", "下一台手术ID", "下一台患者姓名", "下一台手术名称", "主刀医师", "麻醉医师", "巡回护士", "器械护士", "事件数", "最近事件", "最近更新时间", "终端在线数", "终端离线数"], buildVendorOrPanelRows(state, { dataScope }));
+  insertRows(db, "vendor_queue_call", ["叫号ID", "数据范围", "手术日期", "队列号", "手术排班ID", "手术间ID", "手术间", "台次", "患者ID", "姓名", "住院号", "科室", "手术名称", "显示状态", "叫号状态", "计划开始时间", "最近更新时间", "叫号文本"], buildVendorQueueCallRows(state, { dataScope }));
 }
 
 export function getVendorDbInfo(state) {
@@ -481,6 +604,7 @@ export function getVendorDbInfo(state) {
     是否已生成: exists,
     文件字节数: stat?.size ?? 0,
     最后更新时间: displayTime(stat?.mtime?.toISOString() ?? null),
+    数据范围: getVendorDataScope(),
     视图数量: VIEW_DEFINITIONS.length,
     数据视图: VIEW_DEFINITIONS.map(toDisplayViewDefinition),
     各视图记录数: VIEW_DEFINITIONS.map((view) => ({
@@ -498,7 +622,10 @@ function countRowsForView(state, viewName) {
     vendor_surgery_schedule: buildSurgeryRows,
     vendor_report_index: buildReportRows,
     vendor_medication_nursing: buildMedicationNursingRows,
-    vendor_billing_settlement: buildBillingRows
+    vendor_billing_settlement: buildBillingRows,
+    vendor_or_door_screen: (currentState) => buildVendorDoorScreenRows(currentState, { dataScope: getVendorDataScope() }),
+    vendor_or_status_panel: (currentState) => buildVendorOrPanelRows(currentState, { dataScope: getVendorDataScope() }),
+    vendor_queue_call: (currentState) => buildVendorQueueCallRows(currentState, { dataScope: getVendorDataScope() })
   };
   return builders[viewName]?.(state).length ?? 0;
 }
@@ -534,6 +661,20 @@ function rowMatchesQuery(row, query) {
   }
   if (query.encounterId && row["住院就诊ID"] !== query.encounterId) {
     return false;
+  }
+  if (query.roomId && row["手术间ID"] !== query.roomId) {
+    return false;
+  }
+  if (query.dataScope && row["数据范围"] && row["数据范围"] !== normalizeIntegrationDataScope(query.dataScope)) {
+    return false;
+  }
+  if (query.status) {
+    const status = displayStatus(query.status);
+    const rowStatuses = [row["手术状态"], row["显示状态"], row["叫号状态"], row["当前状态"], row["状态"]]
+      .filter(Boolean);
+    if (rowStatuses.length && !rowStatuses.includes(status) && !rowStatuses.includes(query.status)) {
+      return false;
+    }
   }
   if (query.date) {
     const text = Object.values(row).join(" ");
